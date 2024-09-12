@@ -86,6 +86,9 @@ st.markdown(
     .viewerBadge_text__1JaDK {
         display: none;
     }
+    #MainMenu {
+    visibility: hidden;
+}
     </style>
     """,
     unsafe_allow_html=True
