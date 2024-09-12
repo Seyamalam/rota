@@ -90,6 +90,12 @@ st.markdown(
     """,
     unsafe_allow_html=True
 )
+hide_github_icon = """
+#GithubIcon {
+  visibility: hidden;
+}
+"""
+st.markdown(hide_github_icon, unsafe_allow_html=True)
 
 st.sidebar.header("Relative Rotation Graph")
 
@@ -233,6 +239,7 @@ if not st.session_state.first_run and st.session_state.rrg_data is not None:
                     
             </style>
             """, unsafe_allow_html=True)
+
 
 
     with st.expander("Study Data Table", expanded=False):
