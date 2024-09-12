@@ -70,6 +70,9 @@ section[data-testid="stVerticalBlock"] {
 body {
     line-height: 1.2;
 }
+#GithubIcon {
+  visibility: hidden;
+}
 </style>
 """,
     unsafe_allow_html=True,
