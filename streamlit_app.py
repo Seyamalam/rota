@@ -13,9 +13,6 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-st.set_option('deprecation.showfileUploaderEncoding', False)
-
-
 symbols = []
 benchmark = ""
 STUDY_CHOICES = ["Price", "Volume", "Volatility"]
