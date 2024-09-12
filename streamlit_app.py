@@ -13,13 +13,6 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-hide_github_icon = """
-#GithubIcon {
-  visibility: hidden;
-}
-"""
-st.markdown(hide_github_icon, unsafe_allow_html=True)
-
 symbols = []
 benchmark = ""
 STUDY_CHOICES = ["Price", "Volume", "Volatility"]
@@ -62,6 +55,10 @@ section[data-testid="stSidebar"] {
     left: 0.33% !important;
     margin-top: 0 !important;
 }
+a:contains('GitHub') {
+        display: none !important;
+    }
+    footer {visibility: hidden;}
 section[data-testid="stSidebar"] img {
     margin-top: -75px !important;
     margin-left: -10px !important;
