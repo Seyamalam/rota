@@ -74,7 +74,7 @@ body {
 
 st.sidebar.header("Relative Rotation Graph")
 
-#with st.sidebar:
+with st.sidebar:
     source_input = st.selectbox("Data Source", SOURCE_CHOICES, index=0, key="source")
 r2c1, r2c2 = st.sidebar.columns([1, 1])
 
