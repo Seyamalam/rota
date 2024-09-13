@@ -13,39 +13,26 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-symbols = []
-benchmark = ""
-STUDY_CHOICES = ["Price", "Volume", "Volatility"]
-SOURCE_CHOICES = ["Yahoo Finance", "Cboe"]
-source_input = "Yahoo Finance"
-source_dict = {"Yahoo Finance": "yfinance","Cboe": "cboe"}
-source=source_dict[source_input]
-window_input = 21
-study = "price"
-short_period = 21
-long_period = 252
-window = 21
-trading_periods_input = 252
-trading_periods = 252
-tail_interval = "week"
-tail_interval_input = "week"
-tail_periods_input = 30
-tail_periods = 30
-show_tails = False
-st.session_state.rrg_data = st.empty()
-st.session_state.date = None
-st.session_state.fig = None
-rrg_data = st.empty()
-st.session_state.data_tables = None
-
-def import_from_file(module_name, file_path):
-    spec = importlib.util.spec_from_file_location(module_name, file_path)
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module
-
+# Import the module
 module = import_from_file("module", "relative_rotation.py")
 
+# Define sector ETFs and their components
+sector_etfs = {
+    "XLB": ["AMCR", "MOS", "FCX", "SW", "IP", "DOW", "NEM", "CTVA", "FMC", "BALL", "CF", "DD", "ALB", "LYB", "EMN", "IFF", "STLD", "CE", "PPG", "NUE", "PKG", "AVY", "VMC", "ECL", "APD", "SHW", "MLM"],
+    "XLC": ["ATVI", "CHTR", "CMCSA", "DIS", "EA", "FB", "GOOG", "GOOGL", "NFLX", "TMUS", "TTWO", "TWTR", "VZ"],
+    "XLE": ["CVX", "XOM", "COP", "EOG", "SLB", "PXD", "VLO", "PSX", "MPC", "OXY", "KMI", "WMB", "HAL", "DVN", "BKR", "HES", "FANG", "APA", "MRO", "CTRA"],
+    "XLF": ["JPM", "BAC", "WFC", "C", "GS", "MS", "BLK", "SCHW", "USB", "AXP", "PNC", "TFC", "COF", "BK", "SPGI", "CME", "CB", "MMC", "AON", "MET"],
+    "XLI": ["HON", "UNP", "UPS", "BA", "CAT", "GE", "MMM", "LMT", "RTX", "DE", "FDX", "EMR", "ETN", "NSC", "WM", "ITW", "CSX", "GD", "ROK", "LHX"],
+    "XLK": ["AAPL", "MSFT", "NVDA", "V", "MA", "AVGO", "CSCO", "ACN", "ADBE", "CRM", "INTC", "QCOM", "TXN", "ORCL", "IBM", "AMD", "PYPL", "INTU", "NOW", "ADI"],
+    "XLP": ["PG", "KO", "PEP", "WMT", "COST", "PM", "MO", "EL", "CL", "KMB", "KHC", "GIS", "SYY", "STZ", "KR", "HSY", "TSN", "CAG", "CHD", "K"],
+    "XHB": ["LEN", "DHI", "PHM", "NVR", "TOL", "KBH", "TPH", "MDC", "MHO", "LGIH", "TMHC", "CCS", "MTH", "BZH", "HOV", "GRBK", "SKY", "CVCO", "MHK", "LEG"],
+    "XLU": ["NEE", "DUK", "SO", "D", "AEP", "SRE", "EXC", "XEL", "WEC", "ES", "ED", "PEG", "AWK", "EIX", "DTE", "FE", "AEE", "CMS", "ETR", "AES"],
+    "XLV": ["UNH", "JNJ", "PFE", "ABT", "MRK", "TMO", "ABBV", "DHR", "BMY", "LLY", "AMGN", "MDT", "ISRG", "CVS", "GILD", "SYK", "VRTX", "ZTS", "BDX", "BSX"],
+    "XLY": ["AMZN", "TSLA", "HD", "MCD", "NKE", "LOW", "SBUX", "TJX", "TGT", "BKNG", "F", "GM", "MAR", "ROST", "HLT", "YUM", "DG", "DPZ", "ORLY", "CMG"],
+    "XLRE": ["PLD", "AMT", "CCI", "EQIX", "PSA", "O", "WELL", "SPG", "SBAC", "DLR", "VICI", "AVB", "EQR", "WY", "ARE", "VTR", "EXR", "MAA", "UDR", "BXP"]
+}
+
+# Sidebar configuration
 st.sidebar.markdown(
     """
 <style>
@@ -55,10 +42,6 @@ section[data-testid="stSidebar"] {
     left: 0.33% !important;
     margin-top: 0 !important;
 }
-a:contains('GitHub') {
-        display: none !important;
-    }
-    footer {visibility: hidden;}
 section[data-testid="stSidebar"] img {
     margin-top: -75px !important;
     margin-left: -10px !important;
@@ -70,142 +53,64 @@ section[data-testid="stVerticalBlock"] {
 body {
     line-height: 1.2;
 }
-#GithubIcon {
-  visibility: hidden;
-}
 </style>
 """,
     unsafe_allow_html=True,
 )
 
-st.markdown(
-    """
-    <style>
-    .css-1jc7ptx, .e1ewe7hr3, .viewerBadge_container__1QSob,
-    .styles_viewerBadge__1yB5_, .viewerBadge_link__1S137,
-    .viewerBadge_text__1JaDK {
-        display: none;
-    }
-    </style>
-    """,
-    unsafe_allow_html=True
-)
-
 st.sidebar.header("Relative Rotation Graph")
 
+# Sidebar inputs
 with st.sidebar:
-    source_input = st.selectbox("Data Source", SOURCE_CHOICES, index=0, key="source")
-r2c1, r2c2 = st.sidebar.columns([1, 1])
-
-with r2c1:
-    input_string = st.text_input("Symbols", value=",".join(module.SPDRS), key="tickers").replace(" ", "")
-    if input_string == "":
-        st.write("Enter a list of tickers")
-
-with r2c2:
+    source_input = st.selectbox("Data Source", ["Yahoo Finance", "Cboe"], index=0, key="source")
     benchmark_input = st.text_input("Benchmark", value="SPY", key="benchmark")
-    if benchmark_input == "":
-        st.write("Enter a benchmark")
-
-date_input = st.sidebar.date_input("Target End Date", value=datetime.today(), key="date_input")
-st.session_state.date = date_input
-
-with st.sidebar:
-    study_input = st.sidebar.selectbox("Study", STUDY_CHOICES, key="study")
+    date_input = st.date_input("Target End Date", value=datetime.today(), key="date_input")
+    study_input = st.selectbox("Study", ["Price", "Volume", "Volatility"], key="study")
+    
     if study_input == "Volatility":
         st.sidebar.header("Volatility Annualization")
-        r4c1, r4c2 = st.sidebar.columns([1, 1])
-        with r4c1:
-            window_input = st.number_input("Rolling Window", min_value=0, value=21, key="window")
-        with r4c2:
-            trading_periods_input = st.number_input("Periods Per Year", min_value=0, value=252, key="trading_periods")
+        window_input = st.number_input("Rolling Window", min_value=0, value=21, key="window")
+        trading_periods_input = st.number_input("Periods Per Year", min_value=0, value=252, key="trading_periods")
 
-st.sidebar.header("Long/Short Momentum Periods")
+    st.sidebar.header("Long/Short Momentum Periods")
+    long_period_input = st.number_input("Long Period", min_value=0, value=252, key="long_period")
+    short_period_input = st.number_input("Short Period", min_value=0, value=21, key="short_period")
 
-r3c1, r3c2 = st.sidebar.columns([1, 1])  # Create a new set of columns
-
-with r3c1:
-    long_period_input = st.number_input("Long Period", min_value=0, value=252,key="long_period")
-
-with r3c2:
-    short_period_input = st.number_input("Short Period", min_value=0, value = 21, key="short_period")
-
-# Initialize the session state for the button if it doesn't exist
-if "button_clicked" not in st.session_state:
-    st.session_state.button_clicked = False
-
-# When the button is clicked, update the session state
-if st.sidebar.button("Fetch Data"):
-    st.session_state.button_clicked = True
-
-with st.sidebar:
     show_tails_input = st.checkbox("Show Tails", value=False, key="show_tails")
-    r5c1, r5c2 = st.sidebar.columns([1, 1])
-    with r5c1:
-        tail_periods_input = st.number_input("Tail Periods", min_value=0, value=30, key="tail_periods")
-    with r5c2:
-        tail_interval_input = st.selectbox("Tail Interval", ["Week", "Month"], key="tail_interval", index=0)
+    tail_periods_input = st.number_input("Tail Periods", min_value=0, value=30, key="tail_periods")
+    tail_interval_input = st.selectbox("Tail Interval", ["Week", "Month"], key="tail_interval", index=0)
 
+# Create tabs
+tabs = st.tabs(list(sector_etfs.keys()) + ["Custom 1", "Custom 2", "Custom 3"])
 
-symbols = input_string.upper().split(",")
-benchmark = benchmark_input.split(",")[0].upper()
-study = study_input.lower()
-long_period = long_period_input
-short_period = short_period_input
-show_tails=show_tails_input
-tail_periods = tail_periods_input
-tail_interval = tail_interval_input.lower()
-window = window_input
-trading_periods = trading_periods_input
-date = date_input
-source = source_dict[source_input]
-
-if st.session_state.button_clicked:
+# Function to create RRG for a given set of symbols
+def create_rrg(symbols, benchmark, study, date, long_period, short_period, window, trading_periods, tail_periods, tail_interval, source):
     try:
         rrg_data = asyncio.run(module.create(
-            symbols = symbols,
-            benchmark = benchmark,
-            study = study,
-            date = pd.to_datetime(date),
-            long_period = long_period,
-            short_period = short_period,
-            window = window,
-            trading_periods = trading_periods,
-            tail_periods = tail_periods,
-            tail_interval = tail_interval,
+            symbols=symbols,
+            benchmark=benchmark,
+            study=study,
+            date=pd.to_datetime(date),
+            long_period=long_period,
+            short_period=short_period,
+            window=window,
+            trading_periods=trading_periods,
+            tail_periods=tail_periods,
+            tail_interval=tail_interval,
             provider=source,
         ))
-        st.session_state.rrg_data = rrg_data
-        st.session_state.first_run = False
-    except Exception:
-        st.session_state.rrg_data = None
-        st.session_state.first_run = True
-        if input_string != "" and benchmark_input != "":
-            st.write(
-                "There was an error fetching the data."
-                " Please check if the symbols are correct and available at the source."
-                " Volume data may not exist for most indexes, for example."
-            )
-        if input_string == "" or benchmark_input == "":
-            st.write("Please enter a list of symbols and a benchmark.")
+        return rrg_data
+    except Exception as e:
+        st.error(f"Error creating RRG: {str(e)}")
+        return None
 
-
-main_chart = st.expander("Relative Rotation Graph", expanded=True)
-
-if "first_run" not in st.session_state:
-    st.session_state.first_run = True
-
-if not st.session_state.first_run and st.session_state.rrg_data is not None:
-    with main_chart:
-        fig = (
-            st.session_state.rrg_data.show(date, show_tails, tail_periods, tail_interval, external=True)
-            if show_tails is False
-            else st.session_state.rrg_data.show(show_tails=show_tails, tail_periods=tail_periods, tail_interval=tail_interval, external=True)
-        )
+# Function to display RRG
+def display_rrg(rrg_data, show_tails, tail_periods, tail_interval):
+    if rrg_data is not None:
+        fig = rrg_data.show(show_tails=show_tails, tail_periods=tail_periods, tail_interval=tail_interval, external=True)
         fig.update_layout(height=600, margin=dict(l=0, r=20, b=0, t=50, pad=0))
-        st.session_state.fig = fig
         st.plotly_chart(
-            st.session_state.fig,
+            fig,
             use_container_width=True,
             config={
                 "scrollZoom": True,
@@ -217,43 +122,34 @@ if not st.session_state.first_run and st.session_state.rrg_data is not None:
                 ],
             }
         )
-        st.markdown("""
-            <style>
-            .js-plotly-plot .plotly .modebar {
-                top: -40px !important;
-                right: 30px !important;
-                bottom: auto !important;
-                transform: translateY(0) !important;
-            }
-                    .css-1jc7ptx, .e1ewe7hr3, .viewerBadge_container__1QSob,
-    .styles_viewerBadge__1yB5_, .viewerBadge_link__1S137,
-    .viewerBadge_text__1JaDK {
-        display: none;
-    }
-                    
-            </style>
-            """, unsafe_allow_html=True)
 
-
-
-    with st.expander("Study Data Table", expanded=False):
-        symbols_data = (
-            basemodel_to_df(st.session_state.rrg_data.symbols_data)
-            .join(basemodel_to_df(st.session_state.rrg_data.benchmark_data)[st.session_state.rrg_data.benchmark])
-        ).set_index("date")
-        symbols_data.index = pd.to_datetime(symbols_data.index).strftime("%Y-%m-%d")
-        st.dataframe(symbols_data)
-
-    with st.expander("Relative Strength Ratio Table", expanded=False):
-        ratios_data = basemodel_to_df(st.session_state.rrg_data.rs_ratios).set_index("date")
-        ratios_data.index = pd.to_datetime(ratios_data.index).strftime("%Y-%m-%d")
-        st.dataframe(ratios_data)
-
-    with st.expander("Relative Strength Momentum Table", expanded=False):
-        ratios_data = basemodel_to_df(st.session_state.rrg_data.rs_momentum).set_index("date")
-        ratios_data.index = pd.to_datetime(ratios_data.index).strftime("%Y-%m-%d")
-        st.dataframe(ratios_data)
-
+# Process each tab
+for i, tab in enumerate(tabs):
+    with tab:
+        if i < 12:  # Sector ETF tabs
+            etf = list(sector_etfs.keys())[i]
+            symbols = sector_etfs[etf]
+            st.header(f"Relative Rotation Graph for {etf}")
+        else:  # Custom tabs
+            st.header(f"Custom Relative Rotation Graph {i-11}")
+            symbols_input = st.text_input("Enter up to 20 symbols (comma-separated)", key=f"custom_symbols_{i}")
+            symbols = [s.strip().upper() for s in symbols_input.split(',') if s.strip()][:20]
+        
+        if st.button("Generate RRG", key=f"generate_{i}"):
+            rrg_data = create_rrg(
+                symbols=symbols,
+                benchmark=benchmark_input,
+                study=study_input.lower(),
+                date=date_input,
+                long_period=long_period_input,
+                short_period=short_period_input,
+                window=window_input,
+                trading_periods=trading_periods_input,
+                tail_periods=tail_periods_input,
+                tail_interval=tail_interval_input.lower(),
+                source=source_input.lower().replace(" ", "")
+            )
+            display_rrg(rrg_data, show_tails_input, tail_periods_input, tail_interval_input.lower())
 
 # Add the developed by section
 st.sidebar.markdown(
